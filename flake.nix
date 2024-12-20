@@ -111,6 +111,7 @@
                 pkgs.jq
                 pkgs.openssl
                 pkgs-unstable.dioxus-cli
+                pkgs.b3sum
               ];
               enterShell = ''
                 export HTTP_LISTEN="localhost:${toString port}"

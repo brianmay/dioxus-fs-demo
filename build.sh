@@ -1,6 +1,20 @@
-#!/bin/sh
+#!/usr/bin/env bash
 set -e
 set -x
+
+copy_hashed() {
+  local filename
+  local hash
+  local dst
+  local extension
+  local name
+  filename="$(basename "$1")"
+  hash="$(b3sum --raw "$1" | head --bytes 6 | base64)"
+  extension="${filename##*.}"
+  name="${filename%.*}"
+  dst="$OUT_DIR/$name-$hash.$extension"
+  cp "$1" "$dst"
+}
 
 TOP_DIR="$(dirname "$0")"
 TOP_DIR="$(realpath "$TOP_DIR")"
@@ -17,7 +31,6 @@ wasm-bindgen --target bundler --out-dir pkg --omit-default-module-path "$TOP_DIR
 node_modules/.bin/webpack
 
 cp -r "$TOP_DIR/dist/"* "$OUT_DIR"
-#cp "$TOP_DIR/assets/header.svg" "$OUT_DIR/header-73ca13e70f7867c1.svg":
-cp "$TOP_DIR/assets/header.svg" "$OUT_DIR/header-7cBGLs5L.svg"
-cp "$TOP_DIR/assets/main.css" "$OUT_DIR/main-uEcM2i35.css"
-cp "$TOP_DIR/assets/favicon.ico" "$OUT_DIR/favicon-sXV2FF4N.ico"
+copy_hashed "$TOP_DIR/assets/header.svg"
+copy_hashed "$TOP_DIR/assets/main.css"
+copy_hashed "$TOP_DIR/assets/favicon.ico"
