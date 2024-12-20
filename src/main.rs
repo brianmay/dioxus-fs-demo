@@ -8,6 +8,8 @@ enum Route {
     Home {},
     #[route("/blog/:id")]
     Blog { id: i32 },
+    #[route("/:..segments")]
+    NotFound { segments: Vec<String> },
 }
 
 macro_rules! my_asset {
@@ -133,6 +135,21 @@ fn Echo() -> Element {
                     i { "{response}" }
                 }
             }
+        }
+    }
+}
+
+#[component]
+fn NotFound(segments: Vec<String>) -> Element {
+    let segments = segments.join(" / ");
+
+    rsx! {
+        div {
+            id: "not-found",
+            h1 { "404 Not Found" }
+            p { "The page you are looking for does not exist." }
+            p { "You should ask a friendly penguin for help." }
+            p { "Segments: {segments}" }
         }
     }
 }
