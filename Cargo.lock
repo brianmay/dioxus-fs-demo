@@ -346,9 +346,9 @@ dependencies = [
 
 [[package]]
 name = "cc"
-version = "1.2.4"
+version = "1.2.5"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "9157bbaa6b165880c27a4293a474c91cdcf265cc68cc829bf10be0964a391caf"
+checksum = "c31a0499c1dc64f458ad13872de75c0eb7e3fdb0e67964610c914b034fc5956e"
 dependencies = [
  "shlex",
 ]
@@ -812,7 +812,6 @@ dependencies = [
  "dioxus-core",
  "dioxus-core-macro",
  "dioxus-desktop",
- "dioxus-devtools",
  "dioxus-document",
  "dioxus-fullstack",
  "dioxus-history",
@@ -829,9 +828,9 @@ dependencies = [
 
 [[package]]
 name = "dioxus-cli-config"
-version = "0.6.0"
+version = "0.6.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "27a7caafe149ef8b1bb526ac7dfc6687a6b610a91a7fa8b9f9c2f64825538462"
+checksum = "36c11a6723d6d0e8cfce29f0ed6d462f296054153c3dd5df0c8783d19477d1e8"
 dependencies = [
  "wasm-bindgen",
 ]
@@ -891,9 +890,9 @@ dependencies = [
 
 [[package]]
 name = "dioxus-desktop"
-version = "0.6.0"
+version = "0.6.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "bf5999ad0fe42a86a0bd34c0b02ddd1977f8d4ec273466232dfd9bf0481f3979"
+checksum = "5275c023606e38ba2f37a85dbbba22ad098c0abc6c26beb42aa1f60112f1c9d4"
 dependencies = [
  "async-trait",
  "cocoa 0.25.0",
@@ -995,9 +994,9 @@ dependencies = [
 
 [[package]]
 name = "dioxus-fullstack"
-version = "0.6.0"
+version = "0.6.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "ffe83189fc0139a34a4cc195aa3eb917f5b6a3317bf3f4183d9e8f1e110a9bab"
+checksum = "f3806e61071c9b4f9efcaa4d2f28a49d1b51be7a2fe53686305b85944d406a72"
 dependencies = [
  "base64",
  "bytes",
@@ -1122,9 +1121,9 @@ dependencies = [
 
 [[package]]
 name = "dioxus-logger"
-version = "0.6.0"
+version = "0.6.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "86c9db554355b5418ce754c9a98482862f6f71ea1d87f00ee027cd081ad282e6"
+checksum = "c0214f450acfdc4265b09790b149bc615bb37cd30c634e0d835b39bc0bcd5223"
 dependencies = [
  "console_error_panic_hook",
  "dioxus-cli-config",
@@ -1135,9 +1134,9 @@ dependencies = [
 
 [[package]]
 name = "dioxus-mobile"
-version = "0.6.0"
+version = "0.6.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "b4f09755267c9fd577a5084904c71acab7f26fcbba558303d3d7839f0663d96b"
+checksum = "3707cdf4ea0bbd87c783783307dfcf978e3139c8c0fdd41d14d5ed2f3dfe09f2"
 dependencies = [
  "dioxus-desktop",
  "dioxus-lib",
@@ -1148,9 +1147,9 @@ dependencies = [
 
 [[package]]
 name = "dioxus-router"
-version = "0.6.0"
+version = "0.6.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "578d87a3f0a6b71e5d9192121b9fdc5907f704e879ab9f6bb4a7c890c52f5cba"
+checksum = "0299dea6f8759eb766ecf79247d50139f4b640056c3e60e8af254ea6921fb60d"
 dependencies = [
  "dioxus-cli-config",
  "dioxus-history",
@@ -1205,9 +1204,9 @@ dependencies = [
 
 [[package]]
 name = "dioxus-web"
-version = "0.6.0"
+version = "0.6.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "57f6760fc88bd79c79eb2467b0661449dff5968320c3c6886c35c861ba05c695"
+checksum = "ad30399877d3e7e476a246077fbb9e3e57dd094401174b915dfb8aaf99142f0a"
 dependencies = [
  "async-trait",
  "ciborium",
@@ -2439,9 +2438,9 @@ dependencies = [
 
 [[package]]
 name = "libc"
-version = "0.2.168"
+version = "0.2.169"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "5aaeb2981e0606ca11d79718f8bb01164f1d6ed75080182d3abf017e6d244b6d"
+checksum = "b5aba8db14291edd000dfcc4d620c7ebfb122c613afb886ca8803fa4e128a20a"
 
 [[package]]
 name = "libloading"
@@ -2533,9 +2532,9 @@ dependencies = [
 
 [[package]]
 name = "manganis"
-version = "0.6.0"
+version = "0.6.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "287c60ae66fb8a089e4c2c256079dd76e4f9cb147d352b3278ca352e8ed0bf02"
+checksum = "106aa1cb0b0f3ce6828fb1b38bcbd877aeded09e6195f353e4927a3fb8b2b2fb"
 dependencies = [
  "const-serialize",
  "manganis-core",
@@ -2544,9 +2543,9 @@ dependencies = [
 
 [[package]]
 name = "manganis-core"
-version = "0.6.0"
+version = "0.6.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "c7b349d520edba475a760112e6105c55125d8ab1e94147b219fb2f2e3303fad9"
+checksum = "343aa8aca68981a15232c318ff9575dd28c0b6b91a70b7d2881f0a4fdb35176c"
 dependencies = [
  "const-serialize",
  "dioxus-cli-config",
@@ -2556,9 +2555,9 @@ dependencies = [
 
 [[package]]
 name = "manganis-macro"
-version = "0.6.0"
+version = "0.6.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "d7024fc969bf2f2fd874bcd0a5d6ae8f85a2853ba86773a024a744b32f716426"
+checksum = "ad7cab3a5a41455854129b4e90a53c204430622d63005891e037d22fc67d92f9"
 dependencies = [
  "manganis-core",
  "proc-macro2",
@@ -3132,9 +3131,9 @@ checksum = "953ec861398dccce10c670dfeaf3ec4911ca479e9c02154b3a215178c5f566f2"
 
 [[package]]
 name = "png"
-version = "0.17.15"
+version = "0.17.16"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "b67582bd5b65bdff614270e2ea89a1cf15bef71245cc1e5f7ea126977144211d"
+checksum = "82151a2fc869e011c153adc57cf2789ccb8d9906ce52c0b39a6b5697749d7526"
 dependencies = [
  "bitflags 1.3.2",
  "crc32fast",
@@ -5044,9 +5043,9 @@ dependencies = [
 
 [[package]]
 name = "xxhash-rust"
-version = "0.8.12"
+version = "0.8.13"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "6a5cbf750400958819fb6178eaa83bee5cd9c29a26a40cc241df8c70fdd46984"
+checksum = "a08fd76779ae1883bbf1e46c2c46a75a0c4e37c445e68a24b01479d438f26ae6"
 
 [[package]]
 name = "yoke"

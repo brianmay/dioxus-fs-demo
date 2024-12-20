@@ -7,7 +7,7 @@ edition = "2021"
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
 [dependencies]
-dioxus = { version = "=0.6.0", features = ["router", "fullstack"] }
+dioxus = { version = "=0.6.0", features = ["router", "fullstack", "asset", "document", "file_engine", "hooks", "html", "launch", "logger", "macro", "mounted", "signals"], default-features = false }
 static_file_util = "0.1.0"
 lazy_static = "1.4"   # Required dependency for lazy static initialization
 mime = "0.3"          # For handling MIME types
