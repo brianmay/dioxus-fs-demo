@@ -17,4 +17,7 @@ wasm-bindgen --target bundler --out-dir pkg --omit-default-module-path "$TOP_DIR
 node_modules/.bin/webpack
 
 cp -r "$TOP_DIR/dist/"* "$OUT_DIR"
-cp "$TOP_DIR/assets/header.svg" "$OUT_DIR/header-73ca13e70f7867c1.svg":
+#cp "$TOP_DIR/assets/header.svg" "$OUT_DIR/header-73ca13e70f7867c1.svg":
+cp "$TOP_DIR/assets/header.svg" "$OUT_DIR/header-7cBGLs5L.svg"
+cp "$TOP_DIR/assets/main.css" "$OUT_DIR/main-uEcM2i35.css"
+cp "$TOP_DIR/assets/favicon.ico" "$OUT_DIR/favicon-sXV2FF4N.ico"

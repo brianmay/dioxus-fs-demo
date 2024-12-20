@@ -8,6 +8,12 @@ edition = "2021"
 
 [dependencies]
 dioxus = { version = "=0.6.0", features = ["router", "fullstack"] }
+static_file_util = "0.1.0"
+lazy_static = "1.4"   # Required dependency for lazy static initialization
+mime = "0.3"          # For handling MIME types
+
+[build-dependencies]
+static_file_util = "0.1.0"
 
 [features]
 default = []
