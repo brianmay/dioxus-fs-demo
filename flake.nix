@@ -36,6 +36,27 @@
           # hash = pkgs.lib.fakeHash;
           # cargoHash = pkgs.lib.fakeHash;
         });
+
+        # This currently doesn't work, but it's a good idea.
+        # The tests fail due to network access, so we need to skip them.
+        # dioxus-cli = pkgs-unstable.dioxus-cli.overrideAttrs (old: rec {
+        #   version = "0.6.1";
+        #   src = pkgs.fetchCrate {
+        #     inherit version;
+        #     pname = old.pname;
+        #     hash = "sha256-mQnSduf8SHYyUs6gHfI+JAvpRxYQA1DiMlvNofImElU=";
+        #   };
+        #   cargoDeps = old.cargoDeps.overrideAttrs (pkgs.lib.const {
+        #     name = "${old.pname}-vendor.tar.gz";
+        #     inherit src;
+        #     outputHash = "sha256-7jNOdlX9P9yxIfHTY32IXnT6XV5/9WDEjxhvHvT7bms=";
+        #     # outputHash = pkgs.lib.fakeHash;
+        #   });
+        # });
+        dioxus-cli =
+          pkgs.callPackage ./nix/dioxus-cli.nix
+          {
+          };
         rustPlatform = pkgs.rust-bin.stable.latest.default.override {
           targets = ["wasm32-unknown-unknown"];
           extensions = ["rust-src"];
@@ -110,7 +131,7 @@
                 pkgs.sqlx-cli
                 pkgs.jq
                 pkgs.openssl
-                pkgs-unstable.dioxus-cli
+                dioxus-cli
                 pkgs.b3sum
               ];
               enterShell = ''
