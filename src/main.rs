@@ -1,5 +1,4 @@
 use dioxus::prelude::*;
-use static_file_util::static_files;
 
 #[derive(Debug, Clone, Routable, PartialEq)]
 #[rustfmt::skip]
@@ -11,11 +10,15 @@ enum Route {
     Blog { id: i32 },
 }
 
-static_files!(
-    (header_svg, "../assets/header.svg", mime::IMAGE_SVG),
-    (main_css, "../assets/main.css", mime::TEXT_CSS),
-    (favicon, "../assets/favicon.ico", mime::IMAGE_BMP),
-);
+macro_rules! my_asset {
+    ($base:expr,$name:ident,$extension:expr) => {
+        concat!("/", $base, env!(stringify!($name)), $extension)
+    };
+}
+
+const HEADER_SVG: &str = my_asset!("header-", header_svg_HASH, ".svg");
+const MAIN_CSS: &str = my_asset!("main-", main_css_HASH, ".css");
+const FAVICON: &str = my_asset!("favicon-", favicon_HASH, ".ico");
 
 fn main() {
     dioxus::launch(App);
@@ -24,8 +27,8 @@ fn main() {
 #[component]
 fn App() -> Element {
     rsx! {
-        document::Link { rel: "icon", href: favicon.name }
-        document::Link { rel: "stylesheet", href: main_css.name }
+        document::Link { rel: "icon", href: FAVICON }
+        document::Link { rel: "stylesheet", href: MAIN_CSS }
         Router::<Route> {}
     }
 }
@@ -35,7 +38,7 @@ pub fn Hero() -> Element {
     rsx! {
         div {
             id: "hero",
-            img { src: header_svg.name, id: "header" }
+            img { src: HEADER_SVG, id: "header" }
             div { id: "links",
                 a { href: "https://dioxuslabs.com/learn/0.6/", "📚 Learn Dioxus" }
                 a { href: "https://dioxuslabs.com/awesome", "🚀 Awesome Dioxus" }
