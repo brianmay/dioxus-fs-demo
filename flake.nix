@@ -9,21 +9,23 @@
   inputs.crane.url = "github:ipetkov/crane";
   inputs.flockenzeit.url = "github:balsoft/flockenzeit";
 
-  outputs = inputs @ {
-    self,
-    nixpkgs,
-    nixpkgs-unstable,
-    flake-utils,
-    rust-overlay,
-    devenv,
-    crane,
-    flockenzeit,
-  }:
+  outputs =
+    inputs@{
+      self,
+      nixpkgs,
+      nixpkgs-unstable,
+      flake-utils,
+      rust-overlay,
+      devenv,
+      crane,
+      flockenzeit,
+    }:
     flake-utils.lib.eachDefaultSystem (
-      system: let
+      system:
+      let
         pkgs = import nixpkgs {
           inherit system;
-          overlays = [(import rust-overlay)];
+          overlays = [ (import rust-overlay) ];
         };
         pkgs-unstable = nixpkgs-unstable.legacyPackages.${system};
         wasm-bindgen-cli = pkgs.wasm-bindgen-cli.override (old: {
@@ -55,66 +57,149 @@
         # });
         dioxus-cli =
           pkgs.callPackage ./nix/dioxus-cli.nix
-          {
-          };
+            {
+            };
         rustPlatform = pkgs.rust-bin.stable.latest.default.override {
-          targets = ["wasm32-unknown-unknown"];
-          extensions = ["rust-src"];
+          targets = [ "wasm32-unknown-unknown" ];
+          extensions = [ "rust-src" ];
         };
         craneLib = (crane.mkLib pkgs).overrideToolchain rustPlatform;
 
+        nodejs = pkgs.nodejs_20;
+
         build_env = {
-          BUILD_DATE = with flockenzeit.lib.splitSecondsSinceEpoch {} self.lastModified; "${F}T${T}${Z}";
+          BUILD_DATE = with flockenzeit.lib.splitSecondsSinceEpoch { } self.lastModified; "${F}T${T}${Z}";
           VCS_REF = "${self.rev or "dirty"}";
         };
 
-        backend = let
-          common = {
-            src = ./.;
-            pname = "phone_db-backend";
-            version = "0.0.0";
-            cargoExtraArgs = "-p backend";
-            nativeBuildInputs = with pkgs; [pkg-config];
-            buildInputs = with pkgs; [
-              openssl
-              python3
-              protobuf
-            ];
-            # See https://github.com/ipetkov/crane/issues/414#issuecomment-1860852084
-            # for possible work around if this is required in the future.
-            # installCargoArtifactsMode = "use-zstd";
+        nodePackages = pkgs.buildNpmPackage {
+          name = "node-packages";
+          src = ./.;
+          npmDepsHash = builtins.readFile ./npm-deps-hash;
+          dontNpmBuild = true;
+          inherit nodejs;
+
+          installPhase = ''
+            mkdir $out
+            cp -r node_modules $out
+            ln -s $out/node_modules/.bin $out/bin
+          '';
+        };
+
+        frontend =
+          let
+            common = {
+              src = ./.;
+              pname = "dioxus-fs-demo-frontend";
+              version = "0.0.0";
+              cargoExtraArgs = "--features web";
+              # nativeBuildInputs = with pkgs; [ pkg-config ];
+              # buildInputs = with pkgs; [
+              #   protobuf
+              # ];
+              CARGO_BUILD_TARGET = "wasm32-unknown-unknown";
+              doCheck = false;
+            };
+
+            # Build *just* the cargo dependencies, so we can reuse
+            # all of that work (e.g. via cachix) when running in CI
+            cargoArtifacts = craneLib.buildDepsOnly common;
+
+            # Run clippy (and deny all warnings) on the crate source.
+            clippy = craneLib.cargoClippy (
+              {
+                inherit cargoArtifacts;
+                cargoClippyExtraArgs = "-- --deny warnings";
+              }
+              // common
+            );
+
+            # Build the actual crate itself.
+            pkg = craneLib.buildPackage (
+              {
+                inherit cargoArtifacts;
+                doCheck = false;
+              }
+              // common
+              // build_env
+            );
+          in
+          {
+            clippy = clippy;
+            pkg = pkg;
           };
 
-          # Build *just* the cargo dependencies, so we can reuse
-          # all of that work (e.g. via cachix) when running in CI
-          cargoArtifacts = craneLib.buildDepsOnly common;
+        frontend-bindgen = pkgs.stdenv.mkDerivation {
+          name = "dioxus-fs-demo-frontend-bindgen";
+          src = ./.;
 
-          # Run clippy (and deny all warnings) on the crate source.
-          clippy = craneLib.cargoClippy (
-            {
-              inherit cargoArtifacts;
-              cargoClippyExtraArgs = "-- --deny warnings";
-            }
-            // common
-          );
+          buildPhase = ''
+            ${wasm-bindgen-cli}/bin/wasm-bindgen \
+              --target bundler \
+              --out-dir pkg \
+              --omit-default-module-path \
+              ${frontend.pkg}/bin/dioxus-fs-demo.wasm
 
-          # Next, we want to run the tests and collect code-coverage, _but only if
-          # the clippy checks pass_ so we do not waste any extra cycles.
-          coverage = craneLib.cargoTarpaulin ({cargoArtifacts = clippy;} // common);
+            ln -s ${nodePackages}/node_modules ./node_modules
+            export PATH="${nodejs}/bin:${nodePackages}/bin:$PATH"
+            webpack
+          '';
 
-          # Build the actual crate itself.
-          pkg = craneLib.buildPackage (
-            {
-              inherit cargoArtifacts;
-              doCheck = true;
-              # CARGO_LOG = "cargo::core::compiler::fingerprint=info";
-            }
-            // common
-            // build_env
-          );
-        in {
-          inherit clippy coverage pkg;
+          installPhase = ''
+            mkdir $out
+            cp -rv dist/* $out/
+          '';
         };
+
+        backend =
+          let
+            common = {
+              src = ./.;
+              pname = "phone_db-backend";
+              version = "0.0.0";
+              cargoExtraArgs = "--features server";
+              # nativeBuildInputs = with pkgs; [ pkg-config ];
+              # buildInputs = with pkgs; [
+              #   openssl
+              #   python3
+              #   protobuf
+              # ];
+              # See https://github.com/ipetkov/crane/issues/414#issuecomment-1860852084
+              # for possible work around if this is required in the future.
+              # installCargoArtifactsMode = "use-zstd";
+            };
+
+            # Build *just* the cargo dependencies, so we can reuse
+            # all of that work (e.g. via cachix) when running in CI
+            cargoArtifacts = craneLib.buildDepsOnly common;
+
+            # Run clippy (and deny all warnings) on the crate source.
+            clippy = craneLib.cargoClippy (
+              {
+                inherit cargoArtifacts;
+                cargoClippyExtraArgs = "-- --deny warnings";
+              }
+              // common
+            );
+
+            # Next, we want to run the tests and collect code-coverage, _but only if
+            # the clippy checks pass_ so we do not waste any extra cycles.
+            coverage = craneLib.cargoTarpaulin ({ cargoArtifacts = clippy; } // common);
+
+            # Build the actual crate itself.
+            pkg = craneLib.buildPackage (
+              {
+                inherit cargoArtifacts;
+                doCheck = true;
+                # CARGO_LOG = "cargo::core::compiler::fingerprint=info";
+              }
+              // common
+              // build_env
+            );
+          in
+          {
+            inherit clippy coverage pkg;
+          };
 
         port = 4000;
 
@@ -126,28 +211,32 @@
                 rustPlatform
                 pkgs.rust-analyzer
                 wasm-bindgen-cli
-                pkgs.nodejs_20
+                nodejs
                 pkgs.cargo-watch
                 pkgs.sqlx-cli
-                pkgs.jq
-                pkgs.openssl
+                # pkgs.jq
+                # pkgs.openssl
+                pkgs.prefetch-npm-deps
                 dioxus-cli
                 pkgs.b3sum
               ];
               enterShell = ''
                 export HTTP_LISTEN="localhost:${toString port}"
-                export STATIC_PATH="frontend/dist"
+                export STATIC_PATH="dist"
               '';
             }
           ];
         };
-      in {
+      in
+      {
         checks = {
           brian-backend = backend.clippy;
+          frontend-bindgen = frontend.clippy;
         };
         packages = {
           devenv-up = devShell.config.procfileScript;
           backend = backend.pkg;
+          frontend = frontend-bindgen;
         };
         devShells.default = devShell;
       }
