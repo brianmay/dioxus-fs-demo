@@ -1,5 +1,12 @@
 use dioxus::prelude::*;
 
+use std::any::Any;
+#[cfg(feature = "server")]
+use std::sync::Arc;
+
+#[cfg(feature = "server")]
+use std::boxed::Box;
+
 #[derive(Debug, Clone, Routable, PartialEq)]
 #[rustfmt::skip]
 enum Route {
@@ -22,8 +29,27 @@ const HEADER_SVG: &str = my_asset!("header-", header_svg_HASH, ".svg");
 const MAIN_CSS: &str = my_asset!("main-", main_css_HASH, ".css");
 const FAVICON: &str = my_asset!("favicon-", favicon_HASH, ".ico");
 
+#[cfg(feature = "server")]
+#[derive(Debug, Clone)]
+struct MyContext {
+    pub title: String,
+}
+
 fn main() {
-    dioxus::launch(App);
+    #[cfg(feature = "server")]
+    let context = MyContext {
+        title: "Dioxus Context".to_string(),
+    };
+
+    LaunchBuilder::new()
+        // .with_cfg(server_only!(
+        //     ServeConfigBuilder::default().context_providers(Arc::new(vec![provider]))
+        // ))
+        .with_context(server_only! { context })
+        .with_context(server_only! {
+            1234567890u32
+        })
+        .launch(App)
 }
 
 #[component]
@@ -143,12 +169,31 @@ fn Echo() -> Element {
 fn NotFound(segments: Vec<String>) -> Element {
     let segments = segments.join(" / ");
 
+    let magic_number = use_resource(magic_number);
+
     rsx! {
         div {
             id: "not-found",
             h1 { "404 Not Found" }
             p { "The page you are looking for does not exist." }
             p { "You should ask a friendly penguin for help." }
+            match &*magic_number.read() {
+                Some(Ok(magic_number)) => {
+                    rsx! {
+                        p { "Magic Number: {magic_number}" }
+                    }
+                }
+                Some(Err(err)) => {
+                    rsx! {
+                        p { "Error loading your magic number: {err}. Please give up." }
+                    }
+                }
+                None => {
+                    rsx! {
+                        p { "Loading magic number..." }
+                    }
+                }
+            }
             p { "Segments: {segments}" }
         }
     }
@@ -157,5 +202,12 @@ fn NotFound(segments: Vec<String>) -> Element {
 /// Echo the user input on the server.
 #[server(EchoServer)]
 async fn echo_server(input: String) -> Result<String, ServerFnError> {
-    Ok(input.to_uppercase())
+    let FromContext::<MyContext>(context) = extract().await?;
+    Ok(context.title.to_string() + ": " + &input.to_uppercase())
+}
+
+#[server(MagicNumber)]
+async fn magic_number() -> Result<u32, ServerFnError> {
+    let FromContext(magic_number) = extract().await?;
+    Ok(magic_number)
 }
