@@ -1,4 +1,14 @@
+#[cfg(feature = "server")]
+use axum::extract::WebSocketUpgrade;
+
+#[cfg(feature = "server")]
+use axum::response::Response;
+
 use dioxus::prelude::*;
+use futures::{SinkExt, StreamExt};
+use gloo_net::websocket::futures::WebSocket;
+use gloo_net::websocket::Message;
+use tracing::debug;
 
 #[cfg(feature = "server")]
 use std::any::Any;
@@ -15,6 +25,8 @@ enum Route {
     Home {},
     #[route("/blog/:id")]
     Blog { id: i32 },
+    #[route("/websocket")]
+    Websocket {},
     #[route("/:..segments")]
     NotFound { segments: Vec<String> },
 }
@@ -57,7 +69,8 @@ async fn main() {
     let router = axum::Router::new()
         // You can add a dioxus application to the router with the `serve_dioxus_application` method
         // This will add a fallback route to the router that will serve your component and server functions
-        .serve_dioxus_application(cfg, App);
+        .serve_dioxus_application(cfg, App)
+        .route("/echo", axum::routing::get(ws_echo_server));
 
     // Finally, we can launch the server
     let router = router.into_make_service();
@@ -69,6 +82,34 @@ async fn main() {
 #[cfg(not(feature = "server"))]
 fn main() {
     dioxus::launch(App);
+}
+
+/// echo server
+#[cfg(feature = "server")]
+#[axum::debug_handler]
+async fn ws_echo_server(ws: WebSocketUpgrade) -> Response {
+    use axum::extract::ws;
+
+    println!("Got incoming websocket connection.");
+    ws.on_upgrade(|mut socket| async move {
+        println!("Upgraded websocket connection.");
+        socket
+            .send(ws::Message::Text("Why am I waiting?".to_string()))
+            .await
+            .unwrap();
+        while let Some(Ok(msg)) = socket.recv().await {
+            let msg = match msg {
+                ws::Message::Text(msg) => Some(ws::Message::Text(msg.to_uppercase())),
+                ws::Message::Close(..) => None,
+                ws::Message::Binary(_) => None,
+                ws::Message::Ping(_) => None,
+                ws::Message::Pong(_) => None,
+            };
+            if let Some(msg) = msg {
+                socket.send(msg).await.unwrap();
+            }
+        }
+    })
 }
 
 #[component]
@@ -148,6 +189,10 @@ fn Navbar() -> Element {
                 "Home"
             }
             Link {
+                to: Route::Websocket {},
+                "Websocket"
+            }
+            Link {
                 to: Route::Blog { id: 1 },
                 "Blog"
             }
@@ -171,6 +216,68 @@ fn Echo() -> Element {
                 oninput:  move |event| async move {
                     let data = echo_server(event.value()).await.unwrap();
                     response.set(data);
+                },
+            }
+
+            if !response().is_empty() {
+                p {
+                    "Server echoed: "
+                    i { "{response}" }
+                }
+            }
+        }
+    }
+}
+
+/// Echo component that demonstrates fullstack server functions.
+#[component]
+fn Websocket() -> Element {
+    let mut response = use_signal(String::new);
+
+    let tx = use_coroutine(move |mut rx: UnboundedReceiver<String>| async move {
+        let url = "ws://localhost:8080/echo".to_string();
+        debug!("Connecting to websicket...");
+        let mut socket = WebSocket::open(&url).unwrap();
+        debug!("Connected to websicket.");
+
+        loop {
+            match futures::future::select(rx.next(), socket.next()).await {
+                futures::future::Either::Left((msg, _)) => {
+                    if let Some(msg) = msg {
+                        debug!("Sending to socket");
+                        socket.send(Message::Text(msg)).await.unwrap();
+                    } else {
+                        break;
+                    }
+                }
+                futures::future::Either::Right((msg, _)) => match msg {
+                    Some(Ok(Message::Text(msg))) => {
+                        debug!("Receiving from socket");
+                        response.set(msg);
+                    }
+                    Some(Ok(Message::Bytes(msg))) => {
+                        println!("Received binary message: {:?}", msg);
+                    }
+                    Some(Err(err)) => {
+                        eprintln!("Error: {:?}", err);
+                        break;
+                    }
+                    None => {
+                        break;
+                    }
+                },
+            }
+        }
+    });
+
+    rsx! {
+        div {
+            id: "echo",
+            h4 { "ServerFn Echo" }
+            input {
+                placeholder: "Type here to echo...",
+                oninput:  move |event| async move {
+                    tx.send(event.value());
                 },
             }
 

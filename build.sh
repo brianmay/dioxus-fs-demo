@@ -26,7 +26,7 @@ OUT_DIR="$TOP_DIR/target/server-dev/public"
 rm -rf "$OUT_DIR"
 mkdir -p "$OUT_DIR"
 
-npm install
+#npm install
 wasm-bindgen --target bundler --out-dir pkg --omit-default-module-path "$TOP_DIR/target/wasm32-unknown-unknown/debug/dioxus-fs.wasm"
 node_modules/.bin/webpack
 
