@@ -146,8 +146,26 @@
           '';
 
           installPhase = ''
+            copy_hashed() {
+                local filename
+                local hash
+                local dst
+                local extension
+                local name
+                filename="$(basename "$1")"
+                hash="''$(${pkgs.b3sum}/bin/b3sum --raw "$1" | head --bytes 6 | base64)"
+                extension="''${filename##*.}"
+                name="''${filename%.*}"
+                dst="$out/$name-$hash.$extension"
+                cp "$1" "$dst"
+            }
+
             mkdir $out
             cp -rv dist/* $out/
+
+            copy_hashed "assets/header.svg"
+            copy_hashed "assets/main.css"
+            copy_hashed "assets/favicon.ico"
           '';
         };
 
@@ -201,6 +219,13 @@
             inherit clippy coverage pkg;
           };
 
+        combined = pkgs.runCommand "dioxus-fs-demo" { } ''
+          mkdir -p $out
+          mkdir -p $out/bin/public
+          cp -r ${backend.pkg}/. $out
+          cp -r ${frontend-bindgen}/. $out/bin/public
+        '';
+
         port = 4000;
 
         devShell = devenv.lib.mkShell {
@@ -221,8 +246,9 @@
                 pkgs.b3sum
               ];
               enterShell = ''
-                export HTTP_LISTEN="localhost:${toString port}"
-                export STATIC_PATH="dist"
+                # export STATIC_PATH="dist"
+                export PORT="${toString port}"
+                # export DIOXUS_ASSET_ROOT="${frontend-bindgen}"
               '';
             }
           ];
@@ -237,6 +263,8 @@
           devenv-up = devShell.config.procfileScript;
           backend = backend.pkg;
           frontend = frontend-bindgen;
+          combined = combined;
+          default = combined;
         };
         devShells.default = devShell;
       }
