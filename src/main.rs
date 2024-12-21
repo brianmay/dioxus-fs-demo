@@ -72,6 +72,7 @@ async fn main() {
         // You can add a dioxus application to the router with the `serve_dioxus_application` method
         // This will add a fallback route to the router that will serve your component and server functions
         .serve_dioxus_application(cfg, App)
+        .route("/_dioxus", axum::routing::get(dioxus_handler))
         .route("/echo", axum::routing::get(ws_echo_server));
 
     // Finally, we can launch the server
@@ -84,6 +85,12 @@ async fn main() {
 #[cfg(not(feature = "server"))]
 fn main() {
     dioxus::launch(App);
+}
+
+#[cfg(feature = "server")]
+#[axum::debug_handler]
+async fn dioxus_handler(ws: WebSocketUpgrade) -> Response {
+    ws.on_upgrade(|mut socket| async move { while let Some(Ok(_msg)) = socket.recv().await {} })
 }
 
 /// echo server
