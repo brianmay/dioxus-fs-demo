@@ -1,11 +1,11 @@
 use dioxus::prelude::*;
 
+#[cfg(feature = "server")]
 use std::any::Any;
 #[cfg(feature = "server")]
-use std::sync::Arc;
-
-#[cfg(feature = "server")]
 use std::boxed::Box;
+#[cfg(feature = "server")]
+use std::sync::Arc;
 
 #[derive(Debug, Clone, Routable, PartialEq)]
 #[rustfmt::skip]
@@ -35,21 +35,40 @@ struct MyContext {
     pub title: String,
 }
 
-fn main() {
-    #[cfg(feature = "server")]
+// The entry point for the server
+#[cfg(feature = "server")]
+#[tokio::main]
+async fn main() {
     let context = MyContext {
         title: "Dioxus Context".to_string(),
     };
 
-    LaunchBuilder::new()
-        // .with_cfg(server_only!(
-        //     ServeConfigBuilder::default().context_providers(Arc::new(vec![provider]))
-        // ))
-        .with_context(server_only! { context })
-        .with_context(server_only! {
-            1234567890u32
-        })
-        .launch(App)
+    // Get the address the server should run on. If the CLI is running, the CLI proxies fullstack into the main address
+    // and we use the generated address the CLI gives us
+    let address = dioxus_cli_config::fullstack_address_or_localhost();
+
+    let provider_1 = move || Box::new(context.clone()) as Box<dyn Any>;
+    let provider_2 = move || Box::new(42u32) as Box<dyn Any>;
+
+    let cfg = ServeConfigBuilder::default()
+        .context_providers(Arc::new(vec![Box::new(provider_1), Box::new(provider_2)]));
+
+    // Set up the axum router
+    let router = axum::Router::new()
+        // You can add a dioxus application to the router with the `serve_dioxus_application` method
+        // This will add a fallback route to the router that will serve your component and server functions
+        .serve_dioxus_application(cfg, App);
+
+    // Finally, we can launch the server
+    let router = router.into_make_service();
+    let listener = tokio::net::TcpListener::bind(address).await.unwrap();
+    axum::serve(listener, router).await.unwrap();
+}
+
+// For any other platform, we just launch the app
+#[cfg(not(feature = "server"))]
+fn main() {
+    dioxus::launch(App);
 }
 
 #[component]

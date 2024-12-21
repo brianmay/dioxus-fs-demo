@@ -1100,10 +1100,13 @@ dependencies = [
 name = "dioxus-fs"
 version = "0.1.0"
 dependencies = [
+ "axum",
  "dioxus",
+ "dioxus-cli-config",
  "lazy_static",
  "mime",
  "static_file_util",
+ "tokio",
 ]
 
 [[package]]
