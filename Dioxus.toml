@@ -1,12 +1,12 @@
 [application]
 
 # App (Project) Name
-name = "dioxus-fs"
+name = "dioxus-fs-demo"
 
 [web.app]
 
 # HTML title tag content
-title = "dioxus-fs"
+title = "dioxus-fs-demo"
 
 # include `assets` in web platform
 [web.resource]
