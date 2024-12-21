@@ -21,6 +21,7 @@ futures = "0.3.31"
 gloo-net = "0.6.0"
 tracing = "0.1.41"
 tracing-subscriber = { version = "0.3.19", optional = true }
+web-sys = "0.3.76"
 
 [build-dependencies]
 static_file_util = "0.1.0"

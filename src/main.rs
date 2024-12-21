@@ -239,14 +239,26 @@ fn Echo() -> Element {
     }
 }
 
+fn get_websocket_url() -> String {
+    let window = web_sys::window().unwrap();
+    let location = window.location();
+    let protocol = if location.protocol().unwrap() == "https:" {
+        "wss"
+    } else {
+        "ws"
+    };
+    let host = location.host().unwrap();
+    format!("{protocol}://{host}/echo")
+}
+
 /// Echo component that demonstrates fullstack server functions.
 #[component]
 fn Websocket() -> Element {
     let mut response = use_signal(String::new);
 
     let tx = use_coroutine(move |mut rx: UnboundedReceiver<String>| async move {
-        let url = "ws://localhost:8080/echo".to_string();
-        debug!("Connecting to websicket...");
+        let url = get_websocket_url();
+        debug!("Connecting to websicket at {url}");
         let mut socket = WebSocket::open(&url).unwrap();
         debug!("Connected to websicket.");
 
