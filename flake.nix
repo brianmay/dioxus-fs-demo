@@ -226,6 +226,40 @@
           cp -r ${frontend-bindgen}/. $out/bin/public
         '';
 
+        test_module = pkgs.nixosTest {
+          name = "dioxus-fs-demo-test";
+          nodes.machine =
+            { ... }:
+            {
+              imports = [
+                self.nixosModules.default
+              ];
+              services.dioxus-fs-demo = {
+                enable = true;
+                port = 4000;
+              };
+              system.stateVersion = "24.11";
+
+              # services.postgresql = {
+              #   enable = true;
+              #   package = pkgs.postgresql_15;
+              #   extraPlugins = ps: [ ps.postgis ];
+              #   initialScript = pkgs.writeText "init.psql" ''
+              #     CREATE DATABASE dioxus-fs-demo;
+              #     CREATE USER dioxus-fs-demo with encrypted password 'your_secure_password_here';
+              #     ALTER DATABASE dioxus-fs-demo OWNER TO dioxus-fs-demo;
+              #     ALTER USER dioxus-fs-demo1 WITH SUPERUSER;
+              #   '';
+              # };
+            };
+
+          testScript = ''
+            machine.wait_for_unit("dioxus-fs-demo.service")
+            machine.wait_for_open_port(4000)
+            machine.succeed("${pkgs.curl}/bin/curl --fail -v http://localhost:4000/_health")
+          '';
+        };
+
         port = 4000;
 
         devShell = devenv.lib.mkShell {
@@ -246,9 +280,8 @@
                 pkgs.b3sum
               ];
               enterShell = ''
-                # export STATIC_PATH="dist"
+                # export DIOXUS_ASSET_ROOT="dist"
                 export PORT="${toString port}"
-                # export DIOXUS_ASSET_ROOT="${frontend-bindgen}"
               '';
             }
           ];
@@ -258,6 +291,7 @@
         checks = {
           brian-backend = backend.clippy;
           frontend-bindgen = frontend.clippy;
+          test_module = test_module;
         };
         packages = {
           devenv-up = devShell.config.procfileScript;
@@ -268,5 +302,8 @@
         };
         devShells.default = devShell;
       }
-    );
+    )
+    // {
+      nixosModules.default = import ./nix/module.nix { inherit self; };
+    };
 }

@@ -72,6 +72,7 @@ async fn main() {
         // You can add a dioxus application to the router with the `serve_dioxus_application` method
         // This will add a fallback route to the router that will serve your component and server functions
         .serve_dioxus_application(cfg, App)
+        .route("/_health", axum::routing::get(|| async { "OK" }))
         .route("/_dioxus", axum::routing::get(dioxus_handler))
         .route("/echo", axum::routing::get(ws_echo_server));
 
@@ -215,7 +216,7 @@ fn Navbar() -> Element {
 /// Echo component that demonstrates fullstack server functions.
 #[component]
 fn Echo() -> Element {
-    let mut response = use_signal(|| String::new());
+    let mut response = use_signal(String::new);
 
     rsx! {
         div {
