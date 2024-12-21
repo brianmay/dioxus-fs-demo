@@ -20,6 +20,7 @@ getrandom = { version = "0.2.15", features = ["js"] }
 futures = "0.3.31"
 gloo-net = "0.6.0"
 tracing = "0.1.41"
+tracing-subscriber = { version = "0.3.19", optional = true }
 
 [build-dependencies]
 static_file_util = "0.1.0"
@@ -29,7 +30,8 @@ default = []
 web = ["dioxus/web"]
 desktop = ["dioxus/desktop"]
 mobile = ["dioxus/mobile"]
-server = ["dioxus/server", "dioxus-cli-config", "tokio", "axum"]
+server = ["dioxus/server", "dioxus-cli-config", "tokio", "axum", "tracing-subscriber"]
+tracing-subscriber = ["dep:tracing-subscriber"]
 
 [profile]
 

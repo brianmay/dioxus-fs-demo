@@ -8,7 +8,7 @@ use dioxus::prelude::*;
 use futures::{SinkExt, StreamExt};
 use gloo_net::websocket::futures::WebSocket;
 use gloo_net::websocket::Message;
-use tracing::debug;
+use tracing::{debug, error};
 
 #[cfg(feature = "server")]
 use std::any::Any;
@@ -51,6 +51,8 @@ struct MyContext {
 #[cfg(feature = "server")]
 #[tokio::main]
 async fn main() {
+    tracing_subscriber::fmt::init();
+
     let context = MyContext {
         title: "Dioxus Context".to_string(),
     };
@@ -90,9 +92,9 @@ fn main() {
 async fn ws_echo_server(ws: WebSocketUpgrade) -> Response {
     use axum::extract::ws;
 
-    println!("Got incoming websocket connection.");
+    debug!("Got incoming websocket connection.");
     ws.on_upgrade(|mut socket| async move {
-        println!("Upgraded websocket connection.");
+        debug!("Upgraded websocket connection.");
         socket
             .send(ws::Message::Text("Why am I waiting?".to_string()))
             .await
@@ -109,6 +111,7 @@ async fn ws_echo_server(ws: WebSocketUpgrade) -> Response {
                 socket.send(msg).await.unwrap();
             }
         }
+        debug!("Lost connection");
     })
 }
 
@@ -256,10 +259,10 @@ fn Websocket() -> Element {
                         response.set(msg);
                     }
                     Some(Ok(Message::Bytes(msg))) => {
-                        println!("Received binary message: {:?}", msg);
+                        error!("Received binary message: {:?}", msg);
                     }
                     Some(Err(err)) => {
-                        eprintln!("Error: {:?}", err);
+                        error!("Error: {:?}", err);
                         break;
                     }
                     None => {
@@ -268,6 +271,8 @@ fn Websocket() -> Element {
                 },
             }
         }
+
+        debug!("Disconnected from websicket");
     });
 
     rsx! {
