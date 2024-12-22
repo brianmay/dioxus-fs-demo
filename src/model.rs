@@ -2,7 +2,7 @@ use chrono::Utc;
 use serde::{Deserialize, Serialize};
 
 #[cfg(feature = "server")]
-use crate::schema::penguin_encounter;
+use crate::server::schema::penguin_encounter;
 
 #[cfg(feature = "server")]
 use diesel::prelude::*;
