@@ -1,3 +1,4 @@
+use chrono::Utc;
 use diesel::pg::Pg;
 use diesel::prelude::*;
 use diesel_async::async_connection_wrapper::AsyncConnectionWrapper;
@@ -74,7 +75,7 @@ pub async fn create_penguin_encounter(
     name: &str,
     location: &str,
     penalty: PenaltyEnum,
-    date_time: chrono::NaiveDateTime,
+    date_time: chrono::DateTime<Utc>,
 ) -> Result<PenguinEncounter, diesel::result::Error> {
     use crate::schema::penguin_encounter::dsl;
 

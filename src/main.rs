@@ -340,10 +340,17 @@ fn PenguinEncounters() -> Element {
                 for maybe_encounters in &*encounters.read() {
                     match maybe_encounters {
                         Ok(encounters) => {
+                            let timezone = chrono::Local::now().timezone();
+
                             rsx! {
                                 for encounter in encounters {
-                                    li {
-                                        "Name: {encounter.name}, Location: {encounter.location}, Penalty: {encounter.penalty}, Date: {encounter.date_time}"
+                                    {
+                                        let date_time = encounter.date_time.with_timezone(&timezone);
+                                        rsx!{
+                                            li {
+                                                "Name: {encounter.name}, Location: {encounter.location}, Penalty: {encounter.penalty}, Date: {date_time}"
+                                            }
+                                        }
                                     }
                                 }
                             }
@@ -405,7 +412,7 @@ async fn create_penguin_encounter() -> Result<PenguinEncounter, ServerFnError> {
         "Tux",
         "Antarctica",
         model::PenaltyEnum::PatPenguin,
-        chrono::Utc::now().naive_utc(),
+        chrono::Utc::now(),
     )
     .await
     .map_err(|err| ServerFnError::<NoCustomError>::ServerError(err.to_string()))?;

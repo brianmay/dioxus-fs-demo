@@ -1,3 +1,4 @@
+use chrono::Utc;
 use serde::{Deserialize, Serialize};
 
 #[cfg(feature = "server")]
@@ -41,7 +42,7 @@ pub struct PenguinEncounter {
     pub name: String,
     pub location: String,
     pub penalty: PenaltyEnum,
-    pub date_time: chrono::NaiveDateTime,
+    pub date_time: chrono::DateTime<Utc>,
 }
 
 #[allow(dead_code)]
@@ -51,5 +52,5 @@ pub struct CreatePenguinEncounter<'a> {
     pub name: &'a str,
     pub location: &'a str,
     pub penalty: PenaltyEnum,
-    pub date_time: chrono::NaiveDateTime,
+    pub date_time: chrono::DateTime<Utc>,
 }
