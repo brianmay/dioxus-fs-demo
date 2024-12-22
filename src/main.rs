@@ -2,9 +2,6 @@
 mod server;
 
 #[cfg(feature = "server")]
-mod schema;
-
-#[cfg(feature = "server")]
 use server::database;
 
 #[cfg(feature = "server")]

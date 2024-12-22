@@ -64,7 +64,7 @@ pub async fn init() -> DatabasePool {
 pub async fn list_penguin_encounters(
     conn: &mut AsyncPgConnection,
 ) -> Result<Vec<PenguinEncounter>, diesel::result::Error> {
-    use crate::schema::penguin_encounter::dsl;
+    use super::schema::penguin_encounter::dsl;
 
     dsl::penguin_encounter.load(conn).await
 }
@@ -76,7 +76,7 @@ pub async fn create_penguin_encounter(
     penalty: PenaltyEnum,
     date_time: chrono::NaiveDateTime,
 ) -> Result<PenguinEncounter, diesel::result::Error> {
-    use crate::schema::penguin_encounter::dsl;
+    use super::schema::penguin_encounter::dsl;
 
     let penguin_encounter = CreatePenguinEncounter {
         name,
