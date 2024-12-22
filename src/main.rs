@@ -1,21 +1,29 @@
 #[cfg(feature = "server")]
-use axum::extract::WebSocketUpgrade;
+mod server;
 
 #[cfg(feature = "server")]
-use axum::response::Response;
+mod schema;
+
+#[cfg(feature = "server")]
+use server::database;
+
+#[cfg(feature = "server")]
+use server::MyContext;
+
+#[cfg(feature = "server")]
+use server::database::list_penguin_encounters;
+
+#[cfg(feature = "server")]
+use server_fn::error::NoCustomError;
+
+mod model;
+use model::PenguinEncounter;
 
 use dioxus::prelude::*;
 use futures::{SinkExt, StreamExt};
 use gloo_net::websocket::futures::WebSocket;
 use gloo_net::websocket::Message;
 use tracing::{debug, error};
-
-#[cfg(feature = "server")]
-use std::any::Any;
-#[cfg(feature = "server")]
-use std::boxed::Box;
-#[cfg(feature = "server")]
-use std::sync::Arc;
 
 #[derive(Debug, Clone, Routable, PartialEq)]
 #[rustfmt::skip]
@@ -29,6 +37,8 @@ enum Route {
     Websocket {},
     #[route("/:..segments")]
     NotFound { segments: Vec<String> },
+    #[route("/penguin-encounters")]
+    PenguinEncounters {},
 }
 
 macro_rules! my_asset {
@@ -41,47 +51,6 @@ const HEADER_SVG: &str = my_asset!("header-", header_svg_HASH, ".svg");
 const MAIN_CSS: &str = my_asset!("main-", main_css_HASH, ".css");
 const FAVICON: &str = my_asset!("favicon-", favicon_HASH, ".ico");
 
-#[cfg(feature = "server")]
-#[derive(Debug, Clone)]
-struct MyContext {
-    pub title: String,
-}
-
-// The entry point for the server
-#[cfg(feature = "server")]
-#[tokio::main]
-async fn main() {
-    tracing_subscriber::fmt::init();
-
-    let context = MyContext {
-        title: "Dioxus Context".to_string(),
-    };
-
-    // Get the address the server should run on. If the CLI is running, the CLI proxies fullstack into the main address
-    // and we use the generated address the CLI gives us
-    let address = dioxus_cli_config::fullstack_address_or_localhost();
-
-    let provider_1 = move || Box::new(context.clone()) as Box<dyn Any>;
-    let provider_2 = move || Box::new(42u32) as Box<dyn Any>;
-
-    let cfg = ServeConfigBuilder::default()
-        .context_providers(Arc::new(vec![Box::new(provider_1), Box::new(provider_2)]));
-
-    // Set up the axum router
-    let router = axum::Router::new()
-        // You can add a dioxus application to the router with the `serve_dioxus_application` method
-        // This will add a fallback route to the router that will serve your component and server functions
-        .serve_dioxus_application(cfg, App)
-        .route("/_health", axum::routing::get(|| async { "OK" }))
-        .route("/_dioxus", axum::routing::get(dioxus_handler))
-        .route("/echo", axum::routing::get(ws_echo_server));
-
-    // Finally, we can launch the server
-    let router = router.into_make_service();
-    let listener = tokio::net::TcpListener::bind(address).await.unwrap();
-    axum::serve(listener, router).await.unwrap();
-}
-
 // For any other platform, we just launch the app
 #[cfg(not(feature = "server"))]
 fn main() {
@@ -89,38 +58,9 @@ fn main() {
 }
 
 #[cfg(feature = "server")]
-#[axum::debug_handler]
-async fn dioxus_handler(ws: WebSocketUpgrade) -> Response {
-    ws.on_upgrade(|mut socket| async move { while let Some(Ok(_msg)) = socket.recv().await {} })
-}
-
-/// echo server
-#[cfg(feature = "server")]
-#[axum::debug_handler]
-async fn ws_echo_server(ws: WebSocketUpgrade) -> Response {
-    use axum::extract::ws;
-
-    debug!("Got incoming websocket connection.");
-    ws.on_upgrade(|mut socket| async move {
-        debug!("Upgraded websocket connection.");
-        socket
-            .send(ws::Message::Text("Why am I waiting?".to_string()))
-            .await
-            .unwrap();
-        while let Some(Ok(msg)) = socket.recv().await {
-            let msg = match msg {
-                ws::Message::Text(msg) => Some(ws::Message::Text(msg.to_uppercase())),
-                ws::Message::Close(..) => None,
-                ws::Message::Binary(_) => None,
-                ws::Message::Ping(_) => None,
-                ws::Message::Pong(_) => None,
-            };
-            if let Some(msg) = msg {
-                socket.send(msg).await.unwrap();
-            }
-        }
-        debug!("Lost connection");
-    })
+#[tokio::main]
+async fn main() {
+    server::init(App).await;
 }
 
 #[component]
@@ -206,6 +146,10 @@ fn Navbar() -> Element {
             Link {
                 to: Route::Blog { id: 1 },
                 "Blog"
+            }
+            Link {
+                to: Route::PenguinEncounters {},
+                "Penguin Encounters"
             }
         }
 
@@ -350,6 +294,74 @@ fn NotFound(segments: Vec<String>) -> Element {
     }
 }
 
+#[component]
+fn PenguinEncounters() -> Element {
+    let mut encounters = use_resource(get_penguin_encounters);
+    let mut save_result: Signal<Option<Result<PenguinEncounter, ServerFnError>>> =
+        use_signal(|| None);
+
+    rsx! {
+        div {
+            id: "penguin-encounters",
+            h1 { "Penguin Encounters" }
+            match &*save_result.read() {
+                Some(Ok(encounter)) => {
+                    rsx! {
+                        div {
+                            class: "alert alert-success",
+                            "Successfully created penguin encounter: {encounter.name}"
+                        }
+                    }
+                }
+                Some(Err(err)) => {
+                    rsx! {
+                        div {
+                            class: "alert alert-danger",
+                            "Error creating penguin encounter: {err}"
+                        }
+                    }
+                }
+                None => {
+                    rsx! {
+                        button {
+                            onclick: move |_| async move {
+                                let result = create_penguin_encounter().await;
+                                save_result.set(Some(result));
+                                encounters.restart();
+                            },
+                            "Create Penguin Encounter"
+                        }
+                    }
+                }
+            }
+
+
+            ul {
+                for maybe_encounters in &*encounters.read() {
+                    match maybe_encounters {
+                        Ok(encounters) => {
+                            rsx! {
+                                for encounter in encounters {
+                                    li {
+                                        "Name: {encounter.name}, Location: {encounter.location}, Penalty: {encounter.penalty}, Date: {encounter.date_time}"
+                                    }
+                                }
+                            }
+                        }
+                        Err(err) => {
+                            rsx! {
+                                li {
+                                    "Error loading encounters: {err}"
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        }
+    }
+}
+
 /// Echo the user input on the server.
 #[server(EchoServer)]
 async fn echo_server(input: String) -> Result<String, ServerFnError> {
@@ -361,4 +373,42 @@ async fn echo_server(input: String) -> Result<String, ServerFnError> {
 async fn magic_number() -> Result<u32, ServerFnError> {
     let FromContext(magic_number) = extract().await?;
     Ok(magic_number)
+}
+
+#[server(GetPenguinEncounters)]
+async fn get_penguin_encounters() -> Result<Vec<PenguinEncounter>, ServerFnError> {
+    let FromContext::<database::DatabasePool>(pool) = extract().await?;
+
+    let mut connection = pool
+        .get()
+        .await
+        .map_err(|err| ServerFnError::<NoCustomError>::ServerError(err.to_string()))?;
+
+    let penguin_encounters = list_penguin_encounters(&mut connection)
+        .await
+        .map_err(|err| ServerFnError::<NoCustomError>::ServerError(err.to_string()))?;
+
+    Ok(penguin_encounters)
+}
+
+#[server(CreatePenguinEncounter)]
+async fn create_penguin_encounter() -> Result<PenguinEncounter, ServerFnError> {
+    let FromContext::<database::DatabasePool>(pool) = extract().await?;
+
+    let mut connection = pool
+        .get()
+        .await
+        .map_err(|err| ServerFnError::<NoCustomError>::ServerError(err.to_string()))?;
+
+    let penguin_encounter = database::create_penguin_encounter(
+        &mut connection,
+        "Tux",
+        "Antarctica",
+        model::PenaltyEnum::PatPenguin,
+        chrono::Utc::now().naive_utc(),
+    )
+    .await
+    .map_err(|err| ServerFnError::<NoCustomError>::ServerError(err.to_string()))?;
+
+    Ok(penguin_encounter)
 }

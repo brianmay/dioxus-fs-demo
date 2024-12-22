@@ -177,11 +177,12 @@
               version = "0.0.0";
               cargoExtraArgs = "--features server";
               # nativeBuildInputs = with pkgs; [ pkg-config ];
-              # buildInputs = with pkgs; [
-              #   openssl
-              #   python3
-              #   protobuf
-              # ];
+              buildInputs = with pkgs; [
+                pkgs.postgresql_15
+                #   openssl
+                #   python3
+                #   protobuf
+              ];
               # See https://github.com/ipetkov/crane/issues/414#issuecomment-1860852084
               # for possible work around if this is required in the future.
               # installCargoArtifactsMode = "use-zstd";
@@ -237,20 +238,24 @@
               services.dioxus-fs-demo = {
                 enable = true;
                 port = 4000;
+                secretsFile = builtins.toFile "dioxus-fs-demo.env" ''
+                  DATABASE_URL="postgresql://dioxus_fs_demo:your_secure_password_here@localhost/dioxus_fs_demo"
+                '';
+
               };
               system.stateVersion = "24.11";
 
-              # services.postgresql = {
-              #   enable = true;
-              #   package = pkgs.postgresql_15;
-              #   extraPlugins = ps: [ ps.postgis ];
-              #   initialScript = pkgs.writeText "init.psql" ''
-              #     CREATE DATABASE dioxus-fs-demo;
-              #     CREATE USER dioxus-fs-demo with encrypted password 'your_secure_password_here';
-              #     ALTER DATABASE dioxus-fs-demo OWNER TO dioxus-fs-demo;
-              #     ALTER USER dioxus-fs-demo1 WITH SUPERUSER;
-              #   '';
-              # };
+              services.postgresql = {
+                enable = true;
+                package = pkgs.postgresql_15;
+                extensions = ps: [ ps.postgis ];
+                initialScript = pkgs.writeText "init.psql" ''
+                  CREATE DATABASE dioxus_fs_demo;
+                  CREATE USER dioxus_fs_demo with encrypted password 'your_secure_password_here';
+                  ALTER DATABASE dioxus_fs_demo OWNER TO dioxus_fs_demo;
+                  ALTER USER dioxus_fs_demo WITH SUPERUSER;
+                '';
+              };
             };
 
           testScript = ''
@@ -261,6 +266,7 @@
         };
 
         port = 4000;
+        postgres_port = 6201;
 
         devShell = devenv.lib.mkShell {
           inherit inputs pkgs;
@@ -278,11 +284,29 @@
                 pkgs.prefetch-npm-deps
                 dioxus-cli
                 pkgs.b3sum
+                pkgs.diesel-cli
+                pkgs.postgresql_15
               ];
               enterShell = ''
                 # export DIOXUS_ASSET_ROOT="dist"
                 export PORT="${toString port}"
+                export DATABASE_URL="postgresql://dioxus_fs_demo:your_secure_password_here@localhost:${toString postgres_port}/dioxus_fs_demo"
               '';
+              services.postgres = {
+                enable = true;
+                package = pkgs.postgresql_15.withPackages (ps: [ ps.postgis ]);
+                listen_addresses = "127.0.0.1";
+                port = postgres_port;
+                initialDatabases = [ { name = "dioxus_fs_demo"; } ];
+                initialScript = ''
+                  \c dioxus_fs_demo;
+                  CREATE USER dioxus_fs_demo with encrypted password 'your_secure_password_here';
+                  GRANT ALL PRIVILEGES ON DATABASE dioxus_fs_demo TO dioxus_fs_demo;
+                  -- GRANT ALL ON SCHEMA public TO dioxus_fs_demo;
+                  ALTER USER dioxus_fs_demo WITH SUPERUSER;
+                '';
+              };
+
             }
           ];
         };

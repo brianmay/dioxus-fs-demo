@@ -36,6 +36,16 @@ in
       type = types.int;
       default = 8080;
     };
+    secretsFile = mkOption {
+      type = types.str;
+      example = "/run/secrets/dioxus-fs-demo.env";
+      description = lib.mdDoc ''
+        Path to an env file containing the secrets used by dioxus-fs-demo.
+
+        Must contain at least:
+        - `DATABASE_URL` - The URL to the database.
+      '';
+    };
   };
 
   config = mkIf cfg.enable {
@@ -54,6 +64,7 @@ in
       serviceConfig = {
         User = "dioxus";
         ExecStart = "${wrapper}/bin/dioxus-fs-demo";
+        EnvironmentFile = cfg.secretsFile;
       };
     };
   };

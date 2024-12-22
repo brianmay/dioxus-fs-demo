@@ -7,21 +7,29 @@ edition = "2021"
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
 [dependencies]
-dioxus = { version = "=0.6.0", features = ["router", "fullstack", "asset", "document", "file_engine", "hooks", "html", "launch", "logger", "macro", "mounted", "signals"], default-features = false }
+dioxus = { version = "0.6.1", features = ["router", "fullstack", "asset", "document", "file_engine", "hooks", "html", "launch", "logger", "macro", "mounted", "signals"], default-features = false }
 static_file_util = "0.1.0"
 lazy_static = "1.4"   # Required dependency for lazy static initialization
 mime = "0.3"          # For handling MIME types
 tokio = { version = "1.42.0", optional = true }
 dioxus-cli-config = { version = "*", optional = true }
 axum = { version = "0.7.9", optional = true }
-#ws-tool = { version = "0.11.0", features = ["async"] }
-#tungstenite = "0.26.1"
 getrandom = { version = "0.2.15", features = ["js"] }
 futures = "0.3.31"
 gloo-net = "0.6.0"
 tracing = "0.1.41"
 tracing-subscriber = { version = "0.3.19", optional = true }
 web-sys = "0.3.76"
+diesel = { version = "2.2.0", features = ["postgres", "chrono"], optional = true }
+diesel-async = { version = "0.5.2", features = ["async-connection-wrapper", "mobc", "postgres"], optional = true }
+diesel-derive-enum = { version = "2.1.0", features = ["postgres"], optional = true }
+chrono = { version = "0.4.39", features = ["serde"] }
+diesel_migrations = { version = "2.2.0", features = ["postgres"], optional = true }
+
+# check these are needed
+tap = "1.0.1"
+serde = "1.0.216"
+thiserror = "2.0.9"
 
 [build-dependencies]
 static_file_util = "0.1.0"
@@ -31,8 +39,7 @@ default = []
 web = ["dioxus/web"]
 desktop = ["dioxus/desktop"]
 mobile = ["dioxus/mobile"]
-server = ["dioxus/server", "dioxus-cli-config", "tokio", "axum", "tracing-subscriber"]
-tracing-subscriber = ["dep:tracing-subscriber"]
+server = ["dioxus/server", "dioxus-cli-config", "tokio", "axum", "tracing-subscriber", "diesel", "diesel-async", "diesel-derive-enum", "diesel_migrations"]
 
 [profile]
 
