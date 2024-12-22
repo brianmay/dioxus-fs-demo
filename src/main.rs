@@ -14,7 +14,7 @@ use server::MyContext;
 use server::database::list_penguin_encounters;
 
 #[cfg(feature = "server")]
-use server_fn::error::NoCustomError;
+use dioxus::prelude::server_fn::error::NoCustomError;
 
 mod model;
 use model::PenguinEncounter;
