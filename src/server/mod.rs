@@ -4,6 +4,7 @@ use dioxus::prelude::*;
 
 pub mod database;
 mod handlers;
+pub mod schema;
 
 use handlers::{dioxus_handler, ws_echo_server};
 

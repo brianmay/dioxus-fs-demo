@@ -2,7 +2,7 @@ use chrono::Utc;
 use serde::{Deserialize, Serialize};
 
 #[cfg(feature = "server")]
-use crate::schema::penguin_encounter;
+use crate::server::schema::penguin_encounter;
 
 #[cfg(feature = "server")]
 use diesel::prelude::*;
@@ -11,7 +11,7 @@ use diesel::prelude::*;
 #[cfg_attr(feature = "server", derive(diesel_derive_enum::DbEnum, Debug))]
 #[cfg_attr(
     feature = "server",
-    ExistingTypePath = "crate::schema::sql_types::PenaltyEnum"
+    ExistingTypePath = "crate::server::schema::sql_types::PenaltyEnum"
 )]
 pub enum PenaltyEnum {
     PatPenguin,
